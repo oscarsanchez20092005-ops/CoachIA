@@ -1,0 +1,406 @@
+// Proyecto: FitCoach - plantilla Expo + React Native
+// Estructura propuesta (todo en un proyecto Expo):
+// /App.js
+// /package.json (dependencias principales)
+// /app/navigation/RootNavigator.js
+// /app/screens/HomeScreen.js
+// /app/screens/CoachScreen.js
+// /app/screens/DietScreen.js
+// /app/screens/RoutineScreen.js
+// /app/screens/ProfileScreen.js
+// /app/components/BottomTabs.js
+// /app/components/CoachAvatar.js
+// /app/services/firebaseConfig.js (placeholder)
+// /app/services/openaiService.js (placeholder - cómo integrar IA)
+
+/* ===================== package.json (solo dependencias importantes) =====================
+{
+  "expo": "~48.0.0",
+  "name": "fitcoach",
+  "dependencies": {
+    "expo-barcode-scanner": "~12.0.0",
+    "expo-auth-session": "~4.0.0",
+    "expo-status-bar": "~1.4.0",
+    "expo-image-picker": "~14.0.0",
+    "react": "18.2.0",
+    "react-native": "0.71.8",
+    "@react-navigation/native": "^6.1.6",
+    "@react-navigation/bottom-tabs": "^6.5.7",
+    "@react-navigation/native-stack": "^6.9.12",
+    "react-native-gesture-handler": "^2.9.0",
+    "react-native-safe-area-context": "^4.5.0",
+    "react-native-screens": "^3.20.0",
+    "react-native-paper": "^5.0.0",
+    "react-native-vector-icons": "^9.2.0",
+    "firebase": "^9.22.1",
+    "react-native-gifted-chat": "^0.16.4"
+  }
+}
+======================================================================================== */
+
+/* ===================== /App.js ===================== */
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import RootNavigator from './app/navigation/RootNavigator';
+import { Provider as PaperProvider } from 'react-native-paper';
+
+export default function App() {
+  return (
+    <PaperProvider>
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+    </PaperProvider>
+  );
+}
+
+/* ===================== /app/navigation/RootNavigator.js ===================== */
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import HomeScreen from '../screens/HomeScreen';
+import CoachScreen from '../screens/CoachScreen';
+import DietScreen from '../screens/DietScreen';
+import RoutineScreen from '../screens/RoutineScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import BottomTabs from '../components/BottomTabs';
+
+const Tab = createBottomTabNavigator();
+
+export default function RootNavigator() {
+  return (
+    <Tab.Navigator
+      initialRouteName="Coach"
+      screenOptions={{ headerShown: false }}
+      tabBar={props => <BottomTabs {...props} />}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Coach" component={CoachScreen} />
+      <Tab.Screen name="Diet" component={DietScreen} />
+      <Tab.Screen name="Routine" component={RoutineScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}
+
+/* ===================== /app/components/BottomTabs.js ===================== */
+import React from 'react';
+import { View, TouchableOpacity, Text, Image, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+export default function BottomTabs({ state, descriptors, navigation }) {
+  const insets = useSafeAreaInsets();
+
+  const tabs = [
+    { key: 'Home', label: 'Inicio' },
+    { key: 'Coach', label: 'Entrenador IA' },
+    { key: 'Diet', label: 'Dieta' },
+    { key: 'Routine', label: 'Rutina' },
+    { key: 'Profile', label: 'Perfil' }
+  ];
+
+  return (
+    <View style={[styles.container, { paddingBottom: insets.bottom || 12 }]}>      
+      {tabs.map((t, idx) => {
+        const focused = state.index === idx;
+        return (
+          <TouchableOpacity
+            key={t.key}
+            onPress={() => navigation.navigate(t.key)}
+            style={styles.tab}
+          >
+            {/* Aquí puedes poner iconos (react-native-vector-icons) */}
+            <Text style={[styles.label, focused && styles.focused]}>{t.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    height: 64,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderColor: '#eee',
+    alignItems: 'center',
+    justifyContent: 'space-around'
+  },
+  tab: { alignItems: 'center' },
+  label: { fontSize: 12, color: '#333' },
+  focused: { fontWeight: '700', color: '#1e90ff' }
+});
+
+/* ===================== /app/components/CoachAvatar.js ===================== */
+import React, { useEffect, useState } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+
+export default function CoachAvatar({ onPressMotivation }) {
+  // Avatar + burbuja motivadora cada vez que el usuario entra (puedes ligar esto a AsyncStorage/lastOpened)
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity onPress={onPressMotivation} style={styles.avatarWrap}>
+        <Image source={{ uri: 'https://i.pravatar.cc/80?img=12' }} style={styles.avatar} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { position: 'absolute', right: 14, top: 10 },
+  avatarWrap: { width: 52, height: 52, borderRadius: 26, overflow: 'hidden' },
+  avatar: { width: '100%', height: '100%' }
+});
+
+/* ===================== /app/screens/HomeScreen.js ===================== */
+import React from 'react';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import CoachAvatar from '../components/CoachAvatar';
+
+export default function HomeScreen({ navigation }) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <CoachAvatar onPressMotivation={() => alert('¡Eres una máquina! Sigue así 💪')} />
+      <View style={styles.content}>
+        <Text style={styles.title}>Bienvenido a FitCoach</Text>
+        <Text style={styles.subtitle}>Tu app de rutinas y dietas personalizadas</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fafafa' },
+  content: { padding: 20 },
+  title: { fontSize: 22, fontWeight: '700' },
+  subtitle: { marginTop: 8, color: '#666' }
+});
+
+/* ===================== /app/screens/CoachScreen.js ===================== */
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, SafeAreaView, StyleSheet, Text } from 'react-native';
+import { GiftedChat, Bubble } from 'react-native-gifted-chat';
+
+// CHATBOT: flujo inicial para recoger datos del usuario
+export default function CoachScreen({ navigation }) {
+  const [messages, setMessages] = useState([]);
+  const [profile, setProfile] = useState({});
+
+  useEffect(() => {
+    setMessages([
+      {
+        _id: 1,
+        text: 'Hola, soy Juan, tu nuevo entrenador personal. ¿Cómo quieres que sea tu objetivo? (ej: perder grasa, ganar músculo)',
+        createdAt: new Date(),
+        user: { _id: 2, name: 'Juan' }
+      }
+    ]);
+  }, []);
+
+  const onSend = useCallback((messages = []) => {
+    setMessages(previous => GiftedChat.append(previous, messages));
+    const text = messages[0].text.toLowerCase();
+
+    // Lógica simple de flujo - puedes reemplazar por llamadas a OpenAI
+    if (!profile.name) {
+      setProfile(p => ({ ...p, goal: text }));
+      // pedir nombre
+      setTimeout(() => {
+        setMessages(prev => GiftedChat.append(prev, [{ _id: Math.random(), text: 'Perfecto. ¿Cuál es tu nombre?', createdAt: new Date(), user: { _id: 2, name: 'Juan' }}]));
+      }, 700);
+    } else if (!profile.age) {
+      setProfile(p => ({ ...p, name: text }));
+      setTimeout(() => {
+        setMessages(prev => GiftedChat.append(prev, [{ _id: Math.random(), text: '¿Cuántos años tienes?', createdAt: new Date(), user: { _id: 2, name: 'Juan' }}]));
+      }, 700);
+    } else if (!profile.weight) {
+      setProfile(p => ({ ...p, age: text }));
+      setTimeout(() => {
+        setMessages(prev => GiftedChat.append(prev, [{ _id: Math.random(), text: '¿Cuál es tu peso actual (kg)?', createdAt: new Date(), user: { _id: 2, name: 'Juan' }}]));
+      }, 700);
+    } else if (!profile.timeframe) {
+      setProfile(p => ({ ...p, weight: text }));
+      setTimeout(() => {
+        setMessages(prev => GiftedChat.append(prev, [{ _id: Math.random(), text: 'En cuánto tiempo te gustaría lograr ese objetivo?', createdAt: new Date(), user: { _id: 2, name: 'Juan' }}]));
+      }, 700);
+    } else {
+      setProfile(p => ({ ...p, timeframe: text }));
+      // ejemplo: crear plan inicial (puedes cambiar por llamada a OpenAI para plan personalizado)
+      setTimeout(() => {
+        setMessages(prev => GiftedChat.append(prev, [{ _id: Math.random(), text: `¡Perfecto ${profile.name || 'amigo'}! He creado un plan inicial para ${profile.goal || 'tu objetivo'}. Lo podrás ver en Perfil.`, createdAt: new Date(), user: { _id: 2, name: 'Juan' }}]));
+      }, 800);
+    }
+  }, [profile]);
+
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <GiftedChat
+        messages={messages}
+        onSend={messages => onSend(messages)}
+        user={{ _id: 1 }}
+        renderBubble={(props) => <Bubble {...props} wrapperStyle={{ right: { backgroundColor: '#1e90ff' } }} />}
+      />
+    </SafeAreaView>
+  );
+}
+
+/* ===================== /app/screens/DietScreen.js ===================== */
+import React, { useState, useEffect } from 'react';
+import { View, Text, SafeAreaView, Button, StyleSheet } from 'react-native';
+import { BarCodeScanner } from 'expo-barcode-scanner';
+
+export default function DietScreen() {
+  const [hasPermission, setHasPermission] = useState(null);
+  const [scanned, setScanned] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      setHasPermission(status === 'granted');
+    })();
+  }, []);
+
+  const handleBarCodeScanned = ({ type, data }) => {
+    setScanned(true);
+    alert(`Código leído: ${data}\nAquí buscarías el producto por su EAN en tu base de datos/API.`);
+    setShowScanner(false);
+  };
+
+  if (hasPermission === null) return <Text>Solicitando permiso de cámara...</Text>;
+  if (hasPermission === false) return <Text>No se dio permiso para usar la cámara.</Text>;
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Contador de calorías (placeholder)</Text>
+      <Button title="Abrir lector de código de barras" onPress={() => setShowScanner(true)} />
+
+      {showScanner && (
+        <View style={{ flex: 1 }}>
+          <BarCodeScanner onBarCodeScanned={scanned ? undefined : handleBarCodeScanned} style={{ flex: 1 }} />
+          <Button title="Cerrar" onPress={() => setShowScanner(false)} />
+        </View>
+      )}
+
+      <View style={{ marginTop: 20 }}>
+        <Text>Crear y guardar recetas - aquí implementarás formulario para crear recetas y guardarlas en tu BD.</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({ container: { flex: 1, padding: 16 }, title: { fontSize: 18, fontWeight: '700' } });
+
+/* ===================== /app/screens/RoutineScreen.js ===================== */
+import React, { useState } from 'react';
+import { SafeAreaView, View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+
+// Base de datos simple en memoria de ejercicios (reemplazar por BD real)
+const EXERCISES = [
+  { id: '1', name: 'Sentadilla', equipment: 'sin material', demo: 'https://example.com/squat.mp4' },
+  { id: '2', name: 'Flexiones', equipment: 'sin material', demo: 'https://example.com/pushup.mp4' },
+  { id: '3', name: 'Press banca', equipment: 'mancuernas', demo: 'https://example.com/bench.mp4' }
+];
+
+export default function RoutineScreen() {
+  const [myRoutine, setMyRoutine] = useState([]);
+
+  function addToRoutine(ex) {
+    setMyRoutine(r => [...r, ex]);
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, padding: 16 }}>
+      <Text style={styles.title}>Base de ejercicios</Text>
+      <FlatList
+        data={EXERCISES}
+        keyExtractor={i => i.id}
+        renderItem={({ item }) => (
+          <View style={styles.row}>
+            <View>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.sub}>{item.equipment}</Text>
+            </View>
+            <TouchableOpacity onPress={() => addToRoutine(item)} style={styles.btn}>
+              <Text style={{ color: '#fff' }}>Añadir</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+
+      <View style={{ marginTop: 20 }}>
+        <Text style={styles.title}>Tu rutina</Text>
+        {myRoutine.map((r, idx) => (
+          <Text key={idx}>• {r.name}</Text>
+        ))}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({ title: { fontSize: 18, fontWeight: '700' }, row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' }, name: { fontSize: 16 }, sub: { color: '#666' }, btn: { backgroundColor: '#1e90ff', padding: 10, borderRadius: 8 } });
+
+/* ===================== /app/screens/ProfileScreen.js ===================== */
+import React from 'react';
+import { SafeAreaView, View, Text, StyleSheet } from 'react-native';
+
+export default function ProfileScreen() {
+  // Aquí mostramos la info recogida por el chatbot: nombre, edad, peso, objetivo, timeframe, nivel de actividad
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Perfil</Text>
+      <View style={{ marginTop: 12 }}>
+        <Text>Nombre: --</Text>
+        <Text>Edad: --</Text>
+        <Text>Peso actual: --</Text>
+        <Text>Peso objetivo: --</Text>
+        <Text>Nivel actividad: --</Text>
+      </View>
+
+      <View style={{ marginTop: 20 }}>
+        <Text>Resumen semanal (placeholder): aquí mostrarás un "flash" con los cambios semanales.</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({ container: { flex: 1, padding: 16 }, title: { fontSize: 20, fontWeight: '700' } });
+
+/* ===================== /app/services/firebaseConfig.js (rellena con tus credenciales) ===================== */
+// import { initializeApp } from 'firebase/app';
+// import { getAuth } from 'firebase/auth';
+// import { getFirestore } from 'firebase/firestore';
+//
+// const firebaseConfig = {
+//   apiKey: 'TU_API_KEY',
+//   authDomain: 'TU_AUTH_DOMAIN',
+//   projectId: 'TU_PROJECT_ID',
+//   storageBucket: 'TU_STORAGE_BUCKET',
+//   messagingSenderId: '...',
+//   appId: '...'
+// };
+//
+// const app = initializeApp(firebaseConfig);
+// export const auth = getAuth(app);
+// export const db = getFirestore(app);
+
+/* ===================== /app/services/openaiService.js (cómo integrar IA) ===================== */
+// Ejemplo (servidor recomendado):
+// 1) Crea un endpoint en tu backend que llame a la API de OpenAI con tu API key.
+// 2) Desde la app llamas a ese endpoint para pedir respuestas personalizadas.
+//
+// fetch('https://tu-backend/api/openai/coach', { method: 'POST', body: JSON.stringify({ prompt: '...' }) })
+//
+// Si quieres probar en local en Cursor, puedes usar directamente fetch a OpenAI (no recomendado en producción porque expones la API key).
+
+/* ===================== INSTRUCCIONES RÁPIDAS para pegar en Cursor/Expo =====================
+1) Crea proyecto Expo: `npx create-expo-app fitcoach` y selecciona "blank".
+2) Instala dependencias (ejemplo):
+   yarn add @react-navigation/native @react-navigation/bottom-tabs @react-navigation/native-stack react-native-gesture-handler react-native-safe-area-context react-native-screens react-native-paper react-native-vector-icons react-native-gifted-chat expo-barcode-scanner firebase
+3) Copia los ficheros del proyecto (App.js, app/...) según este documento.
+4) Para autenticar a usuarios: usa Firebase Authentication (correo y Apple). En Expo, para Apple Sign-In necesitarás configurar en Apple Developer.
+5) Para IA: crea un backend que envíe prompts a OpenAI/GPT y devuelva respuestas. Integra llamadas desde CoachScreen para obtener planes personalizados.
+6) Para videos de ejercicios generados por IA: inicialmente coloca URLs/placeholder; luego reemplaza por vídeos reales (guardados en Storage o CDNs). Puedes usar servicios de generación de video por IA si lo deseas.
+
+
