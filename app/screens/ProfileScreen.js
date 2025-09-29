@@ -1,17 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet } from 'react-native';
+import { useAuth } from '../services/authContext';
+import { listenUserProfile } from '../services/userService';
 
 export default function ProfileScreen() {
-  // Aquí mostramos la info recogida por el chatbot: nombre, edad, peso, objetivo, timeframe, nivel de actividad
+  const { userId } = useAuth();
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    const unsubscribe = listenUserProfile(userId, setProfile);
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [userId]);
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Perfil</Text>
       <View style={{ marginTop: 12 }}>
-        <Text>Nombre: --</Text>
-        <Text>Edad: --</Text>
-        <Text>Peso actual: --</Text>
-        <Text>Peso objetivo: --</Text>
-        <Text>Nivel actividad: --</Text>
+        <Text>Nombre: {profile?.name || '--'}</Text>
+        <Text>Edad: {profile?.age || '--'}</Text>
+        <Text>Peso actual: {profile?.weight || '--'}</Text>
+        <Text>Objetivo: {profile?.goal || '--'}</Text>
+        <Text>Plazo: {profile?.timeframe || '--'}</Text>
       </View>
 
       <View style={{ marginTop: 20 }}>
